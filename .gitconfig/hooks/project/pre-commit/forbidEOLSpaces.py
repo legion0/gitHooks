@@ -69,13 +69,13 @@ class Git:
 
 	def _command(self, cmd):
 		cmd.insert(0, "git")
-		p = subprocess.Popen(cmd, stdout = subprocess.PIPE, cwd = self.dir)
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.dir)
 		stdout, _ = p.communicate()
 		return stdout
 
 	def _try(self, cmd):
 		cmd.insert(0, "git")
-		p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, cwd = self.dir)
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.dir)
 		p.wait()
 		return p.returncode != 0
 
