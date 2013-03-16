@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import sys, os, subprocess, re
+import sys, os, subprocess
 
 def main(argv):
 	git = Git(".")
@@ -7,35 +7,37 @@ def main(argv):
 	badFiles = []
 
 	for fileName in stagedFiles:
-		if git.textFile(fileName) and eolSpaces(fileName):
+		if os.path.exists(fileName) and git.textFile(fileName) and nonUnixNewlines(fileName):
 			badFiles.append(fileName)
-	
+
 	if len(badFiles) > 0:
-		print >> sys.stderr, "The following files have eol spaces:\n"
+		print >> sys.stderr, "The following files have non unix newlines:\n"
 		print >> sys.stderr, '\n'.join(badFiles)
 		print >> sys.stderr, "\nAborting commit."
 		exit(-1)
 
-def eolSpaces(filePath):
-	with open(filePath, "r") as f:
+def nonUnixNewlines(filePath):
+	with open(filePath, "rb") as f:
 		content = f.read()
-	match = re.search(r"[\x09\x20]+$", content, re.MULTILINE)
-	return match is not None
+	winNL = content.count("\r\n")
+	linNL = content.count("\n")
+	osxNL = content.count("\r")
+	return osxNL > 0 or winNL > 0
 
 class Git:
 	def __init__(self, repoDir="."):
 		self.dir = repoDir
 		os.chdir(self.dir)
 		self.head = self._head()
-	
+
 	def staged(self):
 		files = self._command(["diff", "--name-only", "--staged"])
 		return files.split()
-	
+
 	def textFiles(self):
 		files = self._command(["grep", "-I", "--name-only", ""])
 		return files.split()
-	
+
 	def textFile(self, filePath):
 		with open(filePath, "rb") as f:
 			buffer = f.read(8000)
@@ -47,13 +49,13 @@ class Git:
 			return "HEAD"
 		else:
 			return "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-	
+
 	def _command(self, cmd):
 		cmd.insert(0, "git")
 		p = subprocess.Popen(cmd, stdout = subprocess.PIPE, cwd = self.dir)
 		stdout, _ = p.communicate()
 		return stdout
-	
+
 	def _try(self, cmd):
 		cmd.insert(0, "git")
 		p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, cwd = self.dir)
