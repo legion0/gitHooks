@@ -2,7 +2,7 @@
 import sys, os, subprocess
 
 def main(argv):
-	git = Git("/home/legion/postpc-workspace/testRepo")
+	git = Git(".")
 	stagedFiles = git.staged()
 	badFiles = []
 	for fileName in stagedFiles:
