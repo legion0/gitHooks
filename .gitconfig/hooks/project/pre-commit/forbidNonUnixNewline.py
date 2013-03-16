@@ -1,22 +1,41 @@
 #! /usr/bin/env python
-import sys, os, subprocess
+import sys, os, subprocess, re
+
+REPO_DIR = "."
 
 def main(argv):
-	git = Git(".")
+	git = Git(REPO_DIR)
 	stagedFiles = git.staged()
+	ignorePatterns = getIgnorePatterns()
 	badFiles = []
 
 	for fileName in stagedFiles:
-		if os.path.exists(fileName) and git.textFile(fileName) and nonUnixNewlines(fileName):
+		if os.path.exists(fileName) and git.textFile(fileName) and isBadFile(fileName):
 			badFiles.append(fileName)
 
 	if len(badFiles) > 0:
-		print >> sys.stderr, "The following files have non unix newlines:\n"
+		print >> sys.stderr, "The following files have eol spaces:\n"
 		print >> sys.stderr, '\n'.join(badFiles)
 		print >> sys.stderr, "\nAborting commit."
 		exit(-1)
 
-def nonUnixNewlines(filePath):
+def ignoreFile(fileName, ignorePatterns):
+	for pattern in ignorePatterns:
+		if re.match(pattern, fileName):
+			return True
+	return False
+
+def getIgnorePatterns():
+	ignoreFile = os.path.join(REPO_DIR, ".gitconfig", "hooks", "project", ".nllignore")
+	content = ""
+	if os.path.exists(ignoreFile):
+		with open(ignoreFile, "r") as f:
+			content = f.read()
+	patterns = content.split("\n")
+	patterns = [pattern for pattern in patterns if pattern != ""]
+	return patterns
+
+def isBadFile(filePath):
 	with open(filePath, "rb") as f:
 		content = f.read()
 	winNL = content.count("\r\n")
